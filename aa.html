@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Camera Access Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+    video {
+      width: 640px;
+      height: 480px;
+      margin-top: 20px;
+      border: 2px solid #444;
+      border-radius: 10px;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Enable Your Camera</h1>
+  <button onclick="startCamera()">Access Camera</button>
+  <br>
+  <video id="video" autoplay playsinline></video>
+
+  <script>
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+          const videoElement = document.getElementById('video');
+          videoElement.srcObject = stream;
+        })
+        .catch(function(err) {
+          alert("Camera access denied or not supported: " + err.message);
+        });
+    }
+  </script>
+
+</body>
+</html>
