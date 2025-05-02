@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>login</title>
+  <title>Welcome dear</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,42 +12,90 @@
     video {
       width: 640px;
       height: 480px;
+      border: 2px solid #333;
+      border-radius: 8px;
+    }
+    #timer {
+      font-size: 24px;
       margin-top: 20px;
-      border: 2px solid #444;
-      border-radius: 10px;
-    }
-    button {
-      padding: 12px 24px;
-      font-size: 16px;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
+      color: red;
     }
   </style>
 </head>
 <body>
 
-  <h1>Login Here</h1>
-  <button onclick="startCamera()">Login</button>
-  <br>
+  <h1>Welcome Dear</h1>
   <video id="video" autoplay playsinline></video>
+  <div id="timer">Recording: 00:00</div>
 
   <script>
-    function startCamera() {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(function(stream) {
-          const videoElement = document.getElementById('video');
-          videoElement.srcObject = stream;
-        })
-        .catch(function(err) {
-          alert("Camera access denied or not supported: " + err.message);
-        });
+    let mediaRecorder;
+    let recordedChunks = [];
+    let stream;
+    let timerInterval;
+    let seconds = 0;
+
+    function formatTime(secs) {
+      const m = String(Math.floor(secs / 60)).padStart(2, '0');
+      const s = String(secs % 60).padStart(2, '0');
+      return `${m}:${s}`;
     }
+
+    async function startCameraAndRecord() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+
+        // Setup MediaRecorder
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream);
+
+        mediaRecorder.ondataavailable = e => {
+          if (e.data.size > 0) recordedChunks.push(e.data);
+        };
+
+        mediaRecorder.onstop = () => {
+          const blob = new Blob(recordedChunks, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'recorded-video.webm';
+          a.click();
+          URL.revokeObjectURL(url);
+        };
+
+        // Start recording
+        mediaRecorder.start();
+        console.log("Recording started...");
+
+        // Start timer
+        timerInterval = setInterval(() => {
+          seconds++;
+          document.getElementById('timer').innerText = `Recording: ${formatTime(seconds)}`;
+        }, 1000);
+
+        // Optional: Stop automatically after 30 seconds
+        setTimeout(() => {
+          stopRecording();
+        }, 30000); // 30,000 ms = 30 seconds
+
+      } catch (err) {
+        alert('Camera access denied or not supported: ' + err.message);
+      }
+    }
+
+    function stopRecording() {
+      clearInterval(timerInterval);
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        console.log("Recording stopped.");
+        document.getElementById('timer').innerText = "Recording stopped.";
+      }
+    }
+
+    // Auto-start on page load
+    window.onload = startCameraAndRecord;
   </script>
 
 </body>
